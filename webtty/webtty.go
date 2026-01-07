@@ -168,6 +168,21 @@ func (wt *WebTTY) masterWrite(data []byte) error {
 	return nil
 }
 
+// SendNotification sends a browser notification to the master
+func (wt *WebTTY) SendNotification(title, message, notifType string) error {
+	data := map[string]interface{}{
+		"title":   title,
+		"message": message,
+		"type":    notifType,
+	}
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal notification data")
+	}
+
+	return wt.masterWrite(append([]byte{Notification}, payload...))
+}
+
 func (wt *WebTTY) handleMasterReadEvent(data []byte) error {
 	if len(data) == 0 {
 		return errors.New("unexpected zero length read from master")

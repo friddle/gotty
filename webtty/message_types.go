@@ -32,4 +32,6 @@ const (
 	SetReconnect = '5'
 	// Set the input buffer size
 	SetBufferSize = '6'
+	// Show browser notification
+	Notification = '7'
 )
