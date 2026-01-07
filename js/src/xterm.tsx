@@ -148,6 +148,16 @@ export class GoTTYXterm {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+        // Detect mobile/touch devices
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        // Only set up mobile-specific handlers on mobile/iOS devices
+        if (!isMobile && !isIOS) {
+            console.log('Desktop detected - skipping mobile input handlers');
+            return;
+        }
+
         // Handle beforeinput event - captures input BEFORE it's inserted (iOS compatible)
         terminalElement.addEventListener('beforeinput', (e: Event) => {
             const inputEvent = e as InputEvent;
@@ -199,12 +209,16 @@ export class GoTTYXterm {
         });
 
         // Handle input event as fallback for mobile browsers
-        // Remove isComposing check to send input during composition
+        // For desktop, check isComposing to avoid sending text during IME composition
         terminalElement.addEventListener('input', (e: Event) => {
             const inputEvent = e as InputEvent;
             if (inputEvent.data) {
-                console.log('input event:', inputEvent.data);
-                this.toServer(this.encoder.encode(inputEvent.data));
+                // On desktop, don't send input during IME composition (wait for compositionend)
+                const isComposing = (e.target as HTMLElement).isContentEditable ? false : (inputEvent as any).isComposing;
+                if (!isComposing || isMobile) {
+                    console.log('input event:', inputEvent.data);
+                    this.toServer(this.encoder.encode(inputEvent.data));
+                }
             }
         });
 
