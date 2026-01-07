@@ -15,6 +15,17 @@
 <body>
   <div id="terminal"></div>
 
+  <!-- Mobile Keyboard Trigger Button -->
+  <button id="keyboard-trigger" class="keyboard-trigger" title="Open Keyboard">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/>
+    </svg>
+  </button>
+
+  <!-- Hidden input field for mobile keyboard activation -->
+  <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+
   <!-- Notification Permission Prompt -->
   <div id="notification-prompt" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
     <div style="margin-bottom: 8px;">Enable browser notifications for alerts?</div>
@@ -23,6 +34,38 @@
   </div>
 
   <script>
+    // Handle mobile keyboard trigger
+    document.addEventListener('DOMContentLoaded', () => {
+      const keyboardTrigger = document.getElementById('keyboard-trigger');
+      const mobileInput = document.getElementById('mobile-input');
+
+      if (keyboardTrigger && mobileInput) {
+        keyboardTrigger.addEventListener('click', () => {
+          console.log('Keyboard trigger clicked');
+          mobileInput.focus();
+        });
+
+        // Capture input from hidden field and send to terminal
+        mobileInput.addEventListener('input', (e) => {
+          const target = e.target as HTMLInputElement;
+          if (target.value && window.gottySendInput) {
+            console.log('Mobile input:', target.value);
+            window.gottySendInput(target.value);
+            target.value = ''; // Clear after sending
+          }
+        });
+
+        // Handle Enter key
+        mobileInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && window.gottySendInput) {
+            console.log('Mobile Enter key');
+            window.gottySendInput('\r');
+            (e.target as HTMLInputElement).value = '';
+          }
+        });
+      }
+    });
+
     // Handle notification permission prompt
     document.addEventListener('DOMContentLoaded', () => {
       const prompt = document.getElementById('notification-prompt');

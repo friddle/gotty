@@ -17,3 +17,130 @@
     user-select: none;
     transition: opacity 180ms ease-in;
 }
+
+/* Mobile Keyboard Trigger Button - Compatible with PC, iOS, and Android */
+.keyboard-trigger {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    /* Hide on PC by default, show on mobile */
+    display: none;
+}
+
+.keyboard-trigger:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.keyboard-trigger:active {
+    transform: scale(0.95);
+}
+
+.keyboard-trigger svg {
+    color: white;
+    width: 28px;
+    height: 28px;
+}
+
+/* Hidden Mobile Input Field */
+.mobile-input {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+    z-index: -1;
+}
+
+/* Show keyboard trigger on mobile devices */
+@media (pointer: coarse) or (max-width: 768px) {
+    .keyboard-trigger {
+        display: flex;
+    }
+
+    /* iOS-specific optimizations */
+    @supports (-webkit-touch-callout: none) {
+        .keyboard-trigger {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            bottom: 30px;
+            right: 30px;
+        }
+    }
+
+    /* Android-specific optimizations */
+    @supports (not (-webkit-touch-callout: none)) and (pointer: coarse) {
+        .keyboard-trigger {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+    }
+}
+
+/* Small screen devices (phones) */
+@media (max-width: 480px) {
+    .keyboard-trigger {
+        width: 48px;
+        height: 48px;
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .keyboard-trigger svg {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* Touch devices - ensure button is easily tappable */
+@media (pointer: coarse) {
+    .keyboard-trigger {
+        min-width: 48px;
+        min-height: 48px;
+        /* Ensure adequate touch target size on all platforms */
+        padding: 12px;
+    }
+}
+
+/* High DPI displays (Retina, etc.) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .keyboard-trigger svg {
+        -webkit-transform: scale(1);
+        transform: scale(1);
+    }
+}
+
+/* Prevent zoom on input focus for iOS */
+.mobile-input {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .keyboard-trigger {
+        bottom: 10px;
+        right: 10px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .keyboard-trigger svg {
+        width: 22px;
+        height: 22px;
+    }
+}

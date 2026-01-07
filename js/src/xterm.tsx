@@ -119,16 +119,100 @@ export class GoTTYXterm {
         this.encoder = new TextEncoder()
         this.toServer = callback;
 
+        // Expose sendInput function globally for mobile keyboard trigger
+        (window as any).gottySendInput = (data: string) => {
+            console.log('gottySendInput called:', data);
+            this.toServer(this.encoder.encode(data));
+        };
+
         // I *think* we're ok like this, but if not, we can dispose
         // of the previous handler and put the new one in place.
         if (this.onDataHandler !== undefined) {
             return
         }
 
+        // Standard xterm.js input handler
         this.onDataHandler = this.term.onData((input) => {
             this.toServer(this.encoder.encode(input));
         });
-    };
+
+        // Mobile-specific input handling
+        this.setupMobileInput();
+    }
+
+    private setupMobileInput() {
+        const termElement = this.elem.querySelector('.xterm-text-layer') || this.elem;
+        const terminalElement = this.elem;
+
+        // Detect iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        // Handle beforeinput event - captures input BEFORE it's inserted (iOS compatible)
+        terminalElement.addEventListener('beforeinput', (e: Event) => {
+            const inputEvent = e as InputEvent;
+            if (inputEvent.data && inputEvent.inputType === 'insertText') {
+                console.log('beforeinput event:', inputEvent.data);
+                // Send each character immediately for iOS
+                this.toServer(this.encoder.encode(inputEvent.data));
+                if (isIOS) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+
+        // Handle textInput event for mobile virtual keyboards
+        termElement.addEventListener('textInput', (e: Event) => {
+            const inputEvent = e as InputEvent;
+            if (inputEvent.data) {
+                console.log('textInput event:', inputEvent.data);
+                this.toServer(this.encoder.encode(inputEvent.data));
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Handle compositionupdate to get real-time input during IME composition
+        terminalElement.addEventListener('compositionupdate', (e: Event) => {
+            const compositionEvent = e as CompositionEvent;
+            if (compositionEvent.data && isIOS) {
+                // For iOS, send the new data immediately
+                const newData = compositionEvent.data;
+                // Send only the last character if data length > 0
+                if (newData.length > 0) {
+                    const lastChar = newData.slice(-1);
+                    console.log('compositionupdate event (iOS):', lastChar);
+                    this.toServer(this.encoder.encode(lastChar));
+                }
+            }
+        });
+
+        // Handle compositionend for IME (predictive text, auto-correct)
+        terminalElement.addEventListener('compositionend', (e: Event) => {
+            const compositionEvent = e as CompositionEvent;
+            if (compositionEvent.data) {
+                console.log('compositionend event:', compositionEvent.data);
+                // For non-iOS, send the full composed text
+                if (!isIOS) {
+                    this.toServer(this.encoder.encode(compositionEvent.data));
+                }
+            }
+        });
+
+        // Handle input event as fallback for mobile browsers
+        // Remove isComposing check to send input during composition
+        terminalElement.addEventListener('input', (e: Event) => {
+            const inputEvent = e as InputEvent;
+            if (inputEvent.data) {
+                console.log('input event:', inputEvent.data);
+                this.toServer(this.encoder.encode(inputEvent.data));
+            }
+        });
+
+        // Ensure terminal gets focus on touch
+        terminalElement.addEventListener('touchstart', () => {
+            this.term.focus();
+        }, { passive: true });
+    }
 
     onResize(callback: (colmuns: number, rows: number) => void) {
         this.onResizeHandler = this.term.onResize(() => {
